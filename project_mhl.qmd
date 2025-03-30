@@ -1,0 +1,372 @@
+---
+title: "project_mhl"
+author: "Jan Broll"
+format: html
+date: today
+editor: visual
+execute:
+  echo: false
+---
+
+```{r setup, include=FALSE}
+# Pakete laden
+library(tidyverse)
+library(easystats)
+library(sjPlot)
+library(ggeffects)
+library(gtsummary)
+library(rempsyc)
+
+# data frame laden
+
+df_all <- data_read("./df_all.csv")
+
+df_all <- df_all %>% mutate (sample = as.factor(sample))
+df_all <- df_all %>% mutate (mentorship = as.factor(mentorship))
+df_all <- df_all %>% mutate (ethnicity = as.factor(ethnicity))
+df_all <- df_all %>% mutate (gender = as.factor(gender))
+df_all <- df_all %>% mutate (field = as.factor(field))
+df_all <- df_all %>% mutate (study = as.factor(study))
+df_all <- df_all %>% mutate (position = as.factor(position))
+df_all <- df_all %>% mutate (age = as.numeric(age))
+```
+
+# Einleitung
+
+Dieses Dokument enthält erste **deskriptive und inferenzstatistische Analysen** zur *Mental Health Literacy* unter Personen in MINT-Fächern (*STEM: Science, Technology, Engineering, Mathematics*).
+
+> ⚠️ **Hinweis**:\
+> Dieses Dokument ist ein *vorläufiger Bericht* und befindet sich in Bearbeitung (*Work in Progress*). Ergebnisse und Interpretationen sind nicht final und können sich im weiteren Verlauf der Analyse ändern.
+
+# Deskrptive Analysen
+
+## Stichprobenbeschreibung
+
+Die Stichprobe besteht aus insgesamt `r nrow(data)` Personen.
+
+```{r}
+df_all %>%
+  select(sample, age, ethnicity, gender_simple, tenure) %>%
+  tbl_summary(
+    by = sample,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p}%)"),
+    type = list(tenure ~ "categorical"),
+    missing = "no",
+    label = list(
+      age ~ "Alter",
+      ethnicity ~ "Herkunft",
+      gender_simple ~ "Gender",
+      tenure ~ "Tenure")
+  ) %>%
+  add_p() %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Variable**")
+```
+
+Das durchschnittliche Alter lag in beiden Gruppen bei ca. 48–49 Jahren (p = .60). Die US-Stichprobe war ethnisch deutlich diverser (p \< .001). Hinsichtlich des Geschlechts zeigten sich keine signifikanten Unterschiede (p = .50). Die US-Stichprobe zeigt einen signifikant höheren Anteil an Personen mit Tenure im Vergleich zur deutschen Stichprobe (p \< .001).
+
+## Psychische Gesundheit
+
+Die folgende Tabelle zeigt die Verteilung der psychischen Gesundheit in beiden Stichproben.
+
+```{r}
+df_all %>%
+  select(sample, who5_rev, ghq12_likert, phq4_total, gad, brs_score) %>%
+  tbl_summary(
+    by = sample,                        
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})", 
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no",
+    label = list(
+      who5_rev ~ "WHO-5",
+      ghq12_likert ~ "GHQ-12",
+      phq4_total ~ "PHQ-4",
+      gad ~ "GAD-7",
+      brs_score ~ "BRS"
+    )
+    ) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Skala**")
+```
+
+Die psychische Belastung war in beiden Gruppen vergleichbar. Nur beim GHQ-12 zeigten sich signifikant höhere Werte in der US-Stichprobe (p < .001), was auf eine etwas höhere Belastung hindeutet.
+In der deutschen Stichprobe waren beim GHQ-12 `r df_all %>% filter(sample == "de") %>% summarise(p = mean(ghq12_likert > 12, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`% der Befragten über dem Cut-Off-Wert von 12, während es in der US-Stichprobe `r df_all %>% filter(sample == "us") %>% summarise(p = mean(ghq12_likert > 12, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`% waren. 
+Beim WHO-5 hatten in der deutschen Stichprobe rund `r df_all %>% filter(sample == "de") %>% summarise(p = mean(who5_raw < 13, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`% ein verringertes Wohlbefinden, in der US-Stichprobe waren es `r df_all %>% filter(sample == "us") %>% summarise(p = mean(who5_raw < 13, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`%.
+Beim GAD-7 zeigte sich in der deutschen Stichprobe, dass `r df_all %>% filter(sample == "de") %>% summarise(p = mean(gad > 10, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`% der Befragten mindestens moderate Ängstlichkeit zeigten, in der US-Stichprobe waren es `r df_all %>% filter(sample == "us") %>% summarise(p = mean(gad > 10, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`%.
+Beim PHQ-4 berichteten `r df_all %>% filter(sample == "de") %>% summarise(p = mean(phq4_total > 5, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`% der deutschen Stichprobe mindestens leichte depressive Symptome, in der US-Stichprobe waren es `r df_all %>% filter(sample == "us") %>% summarise(p = mean(phq4_total > 5, na.rm = TRUE) * 100) %>% pull(p) %>% sprintf("%.2f", .)`%.
+
+## Mental Health Literacy
+
+Die folgende Tabelle zeigt die Verteilung der Mental Health Literacy in beiden Stichproben.
+
+```{r}
+df_all %>%
+  select(sample, mhlq_score, mhls_total, mhsas) %>%
+  tbl_summary(
+    by = sample,                        
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})", 
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no",
+        label = list(
+      mhlq_score ~ "MHLQ",
+      mhls_total ~ "MHLS",
+      mhsas ~ "MHSAS"
+    )
+    ) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Skala**")
+```
+
+Die US-Stichprobe zeigte signifikant höhere Werte bei der allgemeinen mental health literacy (MHLQ) und auch leicht höhere Werte auf der MHLS (p \< .001 bzw. p = .009). In den Einstellungen zur Inanspruchnahme professioneller Hilfe (MHSAS) unterschieden sich die Gruppen nicht signifikant.
+
+### MHLq Subskalen
+
+Die folgende Tabelle zeigt die Verteilung der MHLQ-Subskalen in beiden Stichproben.
+
+```{r}
+df_all %>%
+  select(sample, mhlq_knowledge, mhlq_stereotypes, mhlq_help_skills,
+         mhlq_self_help) %>%
+  tbl_summary(
+    by = sample,                        
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})", 
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no",
+            label = list(
+      mhlq_knowledge ~ "Knowledge of mental health problems",
+      mhlq_stereotypes ~ "Erroneous beliefs/stereotypes",
+      mhlq_help_skills ~ "Help-seeking and first aid skills",
+      mhlq_self_help ~ "Self-help strategies")) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Subskala**")
+```
+
+Die US-Stichprobe berichtete durchweg höhere Werte in allen Subskalen der MHLQ. Besonders deutlich waren die Unterschiede bei Wissen über psychische Erkrankungen und der Ablehnung von Stereotypen (p \< .001).
+
+### MHLS Subskalen
+
+Die folgende Tabelle zeigt die Verteilung der MHLS-Subskalen in beiden Stichproben.
+
+```{r}
+df_all %>%
+  select(sample, mhls_recog_disorders, mhls_risk_factors_causes, mhls_help_available,
+         mhls_info_seeking, mhls_attitudes_help_seeking) %>%
+  tbl_summary(
+    by = sample,
+    type = list(
+      mhls_recog_disorders ~ "continuous",
+      mhls_risk_factors_causes ~ "continuous",
+      mhls_help_available ~ "continuous",
+      mhls_info_seeking ~ "continuous",
+      mhls_attitudes_help_seeking ~ "continuous"),
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})"),
+    missing = "no",
+    label = list(
+      mhls_recog_disorders ~ "Ability to recognise specific disorders",
+      mhls_risk_factors_causes ~ "Knowledge of risk factors and causes",
+      mhls_help_available ~ "Knowledge of self-treatments",
+      mhls_info_seeking ~ "Knowledge of professional help available",
+      mhls_attitudes_help_seeking ~ "Attitudes that promote recognition and appropriate help-seeking")) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Variable**")
+```
+
+Die Ergebnisse zeigen signifikante Unterschiede zwischen den US- und deutschen Stichproben in der Fähigkeit, spezifische Störungen zu erkennen, und in den Einstellungen zur Hilfesuche. In anderen Bereichen wurden keine signifikanten Unterschiede festgestellt.
+
+## Einfluss von Tenure
+
+### Psychische Gesundheit
+
+Die folgende Tabelle zeigt die Verteilung der psychischen Gesundheit in Abhängigkeit vom Tenure-Status.
+
+```{r}
+df_all %>%
+  select(tenure, who5_rev, ghq12_likert, phq4_total, gad, brs_score) %>%
+  tbl_summary(
+    by = tenure,                        
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})", 
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no",
+    label = list(
+      who5_rev ~ "WHO-5",
+      ghq12_likert ~ "GHQ-12",
+      phq4_total ~ "PHQ-4",
+      gad ~ "GAD-7",
+      brs_score ~ "BRS"
+    )
+  ) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Skala**")
+```
+
+Die Analyse zeigt signifikante Unterschiede im psychischen Wohlbefinden basierend auf dem Tenure-Status. Personen mit Tenure (ja) weisen höhere Werte im WHO-5 auf, was auf ein besseres Wohlbefinden hinweist (p < 0.001). Sie haben auch niedrigere Werte im GHQ-12, PHQ-4 und GAD-7, was auf weniger psychische Belastungen hindeutet (p < 0.001, p = 0.006, p = 0.013). Der BRS-Score zeigt keine signifikanten Unterschiede (p = 0.110), was darauf hinweist, dass die Widerstandsfähigkeit unabhängig vom Tenure-Status ist.
+
+### Mental Health Literacy
+
+Die folgende Tabelle zeigt die Verteilung der Mental Health Literacy in Abhängigkeit vom Tenure-Status.
+
+```{r}
+df_all %>%
+  select(tenure, mhlq_score, mhls_total, mhsas) %>%
+  tbl_summary(
+    by = tenure,                        
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})", 
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no",
+    label = list(
+      mhlq_score ~ "MHLQ",
+      mhls_total ~ "MHLS",
+      mhsas ~ "MHSAS"
+    )
+  ) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Skala**")
+```
+
+Die Analyse zeigt, dass Personen ohne Tenure signifikant höhere MHLQ-Werte aufweisen (p < 0.001), was auf eine bessere mentale Gesundheitskompetenz hinweist. Es gibt jedoch keine signifikanten Unterschiede in den MHLS- und MHSAS-Werten basierend auf dem Tenure-Status (p = 0.163 bzw. p = 0.509).
+
+## Einfluss von Gender
+
+### Psychische Gesundheit
+
+Die folgende Tabelle zeigt die Verteilung der psychischen Gesundheit in Abhängigkeit vom Geschlecht. Der Einfachheit halber wurden hier nur Männer und Frauen verglichen.
+
+```{r}
+suppressMessages({
+  df_all %>%
+    select(gender_binary, who5_rev, ghq12_likert, phq4_total, gad, brs_score) %>%
+    tbl_summary(
+      by = gender_binary,
+      statistic = list(
+        all_continuous() ~ "{mean} ({sd})",
+        all_categorical() ~ "{n} ({p}%)"
+      ),
+      missing = "no",
+      label = list(
+        who5_rev ~ "WHO-5",
+        ghq12_likert ~ "GHQ-12",
+        phq4_total ~ "PHQ-4",
+        gad ~ "GAD-7",
+        brs_score ~ "BRS"
+      )
+    ) %>%
+    add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+    bold_labels() %>%
+    modify_header(label ~ "**Skala**")
+})
+```
+
+Die Analyse zeigt signifikante Geschlechtsunterschiede in mehreren psychischen Gesundheitsindikatoren. Frauen weisen niedrigere WHO-5-Werte auf, was auf ein geringeres Wohlbefinden hinweist (p < 0.001). Sie haben auch höhere Werte im PHQ-4 und GAD-7, was auf mehr Angst und Depression hindeutet (p = 0.004 bzw. p = 0.002). Der GHQ-12-Score ist ebenfalls signifikant höher bei Frauen (p = 0.041). Der BRS-Score zeigt keine signifikanten Unterschiede (p = 0.449).
+
+### Mental Health Literacy
+
+Die folgende Tabelle zeigt die Verteilung der Mental Health Literacy in Abhängigkeit vom Geschlecht.Der Einfachheit halber wurden hier nur Männer und Frauen verglichen.
+
+```{r}
+suppressMessages({
+df_all %>%
+  select(gender_binary, mhlq_score, mhls_total, mhsas) %>%
+  tbl_summary(
+    by = gender_binary,                        
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})", 
+      all_categorical() ~ "{n} ({p}%)"),
+    missing = "no",
+    label = list(
+      mhlq_score ~ "MHLQ",
+      mhls_total ~ "MHLS",
+      mhsas ~ "MHSAS"
+    )
+  ) %>%
+  add_p(pvalue_fun = ~style_pvalue(.x, digits = 3)) %>%
+  bold_labels() %>%
+  modify_header(label ~ "**Skala**")
+})
+```
+
+Die Analyse zeigt, dass Frauen signifikant höhere MHSAS-Werte aufweisen als Männer (p = 0.011), was auf eine bessere mentale Gesundheitskompetenz in Bezug auf soziale Unterstützung hinweist. Es gibt jedoch keine signifikanten Unterschiede zwischen den Geschlechtern in den MHLQ- und MHLS-Werten (p = 0.133 bzw. p = 0.599). 
+
+# Inferenzstatistische Analysen
+
+## Korrelation zwischen Mental Health Literacy und psychischer Gesundheit
+
+Der folgende Plot zeigt die Korrelationen zwischen Mental Health Literacy (MHLQ) und psychischer Gesundheit/Stresserholung (GHQ-12, PHQ-4, GAD-7, BRS).
+
+```{r}
+df_all %>%
+  select(mhlq_score, mhls_total, mhsas, who5_rev, ghq12_likert, 
+         phq4_total, gad, brs_score) %>%
+  correlation() %>%
+  summary() %>%
+  plot() +
+  ggtitle("Korrelation zwischen Mental Health Literacy Fragebögen und Mental Health")
+```
+
+Die Korrelationsanalyse zeigt, dass die mentalen Gesundheitskompetenz-Fragebögen (MHLQ-Score, MHLS-Total, MHSAS) keine signifikanten Korrelationen mit dem BRS-Score aufweisen. Der MHLQ-Score korreliert schwach positiv mit dem GHQ-12 (r = 0.14, p \< 0.01), während die anderen mentalen Gesundheitskompetenz-Fragebögen keine signifikanten Korrelationen mit GAD-7, PHQ-4 oder WHO-5zeigen.
+
+## Prädiktoren für mentale Gesundheit
+
+Die folgende Tabelle zeigt die Ergebnisse einer multiplen Regressionsanalyse, in der die psychische Gesundheit (GHQ-12) durch verschiedene Prädiktoren (Alter, Herkunft, Geschlecht, Tenure) erklärt wird.
+
+```{r results="hide"}
+#| include: false
+ghq_reg <- lm(ghq12_likert ~ sample + age + ethnicity + gender_simple + tenure + mentorship, 
+              data = df_all)
+(ghq.table <- report_table(ghq_reg))
+```
+
+```{r}
+#| echo: false
+nice_table(ghq.table, report = "lm", short = TRUE)
+```
+
+Die Regressionsanalyse zeigt, dass die US-Stichprobe im Vergleich zur deutschen Stichprobe signifikant höhere Werte im GHQ-12 aufweist (p \< 0.001). Das Alter hat ebenfalls einen signifikanten negativen Einfluss auf den GHQ-12-Score (p \< 0.001), was darauf hindeutet, dass jüngere Personen höhere Werte haben. Die ethnische Zugehörigkeit und das Geschlecht zeigen größtenteils keine signifikanten Unterschiede, mit Ausnahme der Kategorie "Trans", die signifikant höhere Werte aufweist (p = 0.005). Der Tenure-Status hat keinen signifikanten Einfluss auf den GHQ-12-Score (p = 0.988), ebensowenig mentorship (p = 0.267. Das Modell erklärt etwa 10% der Varianz im GHQ-12-Score.
+
+## Prädiktoren für Mental Health Literacy
+
+Die folgende Tabelle zeigt die Ergebnisse einer multiplen Regressionsanalyse, in der die allgemeine Mental Health Literacy (MHLQ) durch verschiedene Prädiktoren (Alter, Herkunft, Geschlecht, Tenure, GHQ, GAD, BRS) erklärt wird.
+
+```{r}
+#| include: false
+mlhq_reg <- lm(mhlq_score ~ sample + age + ethnicity + gender_simple + tenure + mentorship 
+               + ghq12_likert + gad + brs_score, data = df_all)
+
+(mlhq.table <- report_table(mlhq_reg))
+```
+
+```{r}
+nice_table(mlhq.table, report = "lm", short = TRUE)
+```
+
+Die Regressionsanalyse zeigt, dass die US-Stichprobe signifikant höhere MHLQ-Scores aufweist als die deutsche Stichprobe (p \< 0.001). Alter, ethnische Zugehörigkeit, Geschlecht, Tenure, Mentorship, GHQ-12-Score, GAD und BRS-Score haben keinen signifikanten Einfluss auf den MHLQ-Score. Das Modell erklärt etwa 50% der Varianz im MHLQ-Score.
+
+# Psychometrische Analysen
+
+## Korrelation der mental health literacy Skalen
+
+Der folgende Plot zeigt die Korrelationen zwischen den verschiedenen Mental Health Literacy-Skalen (MHLQ, MHLS, MHSAS).
+
+```{r}
+df_all %>%
+  select(mhlq_score, mhls_total, mhsas) %>%
+  correlation() %>%
+  summary() %>%
+  plot() +
+  ggtitle("Korrelation zwischen Mental Health Literacy Fragebögen")
+```
+
+Die Korrelationsanalyse zeigt signifikante positive Zusammenhänge zwischen den Variablen. Der MHLQ-Score korreliert moderat mit dem MHSAS (r = 0.27, p \< 0.001) und stark mit dem MHLS-Total (r = 0.42, p \< 0.001). Auch der MHLS-Total korreliert moderat mit dem MHSAS (r = 0.39, p \< 0.001). Alle Korrelationen sind statistisch signifikant.
