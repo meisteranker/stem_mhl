@@ -420,21 +420,14 @@ data_de <- data_de %>%
     mentor_and_au = D707_09_4,
     mentor_and_n = D707_09_CN)
 
-## Recode tenure
-
-data_de <- data_de %>% mutate (tenure = as.factor(tenure))
-
-data_de <- data_de %>%
-  mutate(tenure = fct_recode(tenure,"yes" = "1","no" = "2"))
-
-## Recode mentorship
-
-data_de <- data_de %>% mutate (mentorship = as.factor(mentorship))
-
-data_de <- data_de %>%
-  mutate(mentorship = fct_recode(mentorship,"yes" = "1","no" = "2"))
-
 #### Rename variables: us
+
+data_us <- data_us |>
+  rename(
+    case_id        = CASE,
+    questionnaire  = QUESTNNR,
+    interview_mode = MODE,
+    started_at     = STARTED)
 
 data_us <- data_us |>
   rename(
@@ -769,20 +762,6 @@ data_us <- data_us |>
     mentor_count_female         = U710_02,
     mentor_count_non_binary     = U710_03)
 
-## Recode tenure
-
-data_us <- data_us %>% mutate (tenure = as.factor(tenure))
-
-data_us <- data_us %>%
-  mutate(tenure = fct_recode(tenure,"yes" = "1","no" = "2"))
-
-## Recode mentorship
-
-data_us <- data_us %>% mutate (mentorship = as.factor(mentorship))
-
-data_us <- data_us %>%
-  mutate(mentorship = fct_recode(mentorship,"yes" = "1","no" = "2"))
-
 #### Sample-Variable hinzufügen
 
 data_de <- data_de  |>
@@ -790,6 +769,42 @@ data_de <- data_de  |>
 
 data_us <- data_us |>
   mutate(sample = "us")
+
+#### Harmonisierte Position-Variable erstellen
+
+data_de <- data_de |>
+  mutate(pos_category = case_when(
+    pos_professor    == 1 ~ "Full Professor",
+    pos_junior_prof  == 1 ~ "Assist. / Junior Professor",
+    pos_priv_docent  == 1 ~ "Privatdozent",
+    pos_group_leader == 1 ~ "Group Leader",
+    pos_postdoc      == 1 ~ "Postdoc",
+    pos_akad_council == 1 ~ "Akademischer Rat",
+    TRUE                  ~ "Other"
+  ) |> factor(levels = c(
+    "Full Professor", "Assist. / Junior Professor", "Privatdozent",
+    "Group Leader", "Postdoc", "Akademischer Rat", "Other"
+  )))
+
+data_us <- data_us |>
+  mutate(pos_category = case_when(
+    pos_full_prof == 1 | pos_dist_prof == 1 |
+      pos_prof == 1                              ~ "Full Professor",
+    pos_assoc_prof == 1                          ~ "Associate Professor",
+    pos_assist_prof == 1                         ~ "Assist. / Junior Professor",
+    pos_lecturer == 1 | pos_instructor == 1 |
+      pos_assist_teach_prof == 1 |
+      pos_assoc_teach_prof  == 1 |
+      pos_teach_prof == 1                        ~ "Lecturer / Instructor",
+    pos_assist_res_prof == 1 |
+      pos_assoc_res_prof == 1 |
+      pos_res_prof == 1                          ~ "Research Professor",
+    TRUE                                         ~ "Other"
+  ) |> factor(levels = c(
+    "Full Professor", "Associate Professor", "Assist. / Junior Professor",
+    "Lecturer / Instructor", "Research Professor", "Other"
+  )))
+
 
 #### save dfs
 
@@ -808,5 +823,4 @@ df_all <- bind_rows(data_de, data_us)
 
 ### save df
 
-data_write(df_all, "data_all.csv")
-
+data_write(df_all, "data_all_tidy.csv")

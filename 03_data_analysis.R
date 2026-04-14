@@ -6,6 +6,7 @@ library(sjPlot)
 library(ggeffects)
 library(gtsummary)
 library(psych)
+library(rempsyc)
 
 
 ### NA
@@ -28,6 +29,10 @@ df_all <- df_all %>% mutate (field = as.factor(field))
 df_all <- df_all %>% mutate (study = as.factor(study))
 df_all <- df_all %>% mutate (position = as.factor(position))
 df_all <- df_all %>% mutate (age = as.numeric(age))
+df_all <- df_all %>% mutate (ghq12_likert = as.numeric(ghq12_likert))
+df_all <- df_all %>% mutate (gad = as.numeric(gad))
+df_all <- df_all %>% mutate (brs_score = as.numeric(brs_score))
+df_all <- df_all %>% mutate (mhlq_score = as.numeric(mhlq_score))
 
 #### descriptive statistics
 
@@ -256,3 +261,60 @@ fa.parallel(mhlq_items)
 ### Save data frame
 
 data_write(df_all, "df_all.csv")
+
+### Omega der Abteilungsklima Skalen
+
+for (s in c("de", "us")) {
+  cat("\n=== Sample:", toupper(s), "===\n")
+  sub <- df_all %>% filter(sample == s)
+  
+  cat("\nSubskala 1: Interpersonelles Klima\n")
+  sub %>%
+    select(starts_with("cl1_")) %>%
+    drop_na() %>%
+    omega(plot = FALSE) %>%
+    print()
+  
+  cat("\nSubskala 2: Arbeitsatmosphäre\n")
+  sub %>%
+    select(starts_with("cl2_")) %>%
+    drop_na() %>%
+    omega(plot = FALSE) %>%
+    print()
+  
+  cat("\nSubskala 3: Wahrgenommener Einfluss\n")
+  sub %>%
+    select(starts_with("cl3_")) %>%
+    drop_na() %>%
+    omega(plot = FALSE) %>%
+    print()
+}
+
+### Omega der BRS
+
+for (s in c("de", "us")) {
+  cat("\nBRS Sample:", toupper(s), "\n")
+  df_all %>%
+    filter(sample == s) %>%
+    select(brs_recover_quickly, brs_handle_stress_r, brs_recover_fast,
+           brs_back_to_normal_r, brs_get_through,
+           brs_take_long_to_recover_r) %>%
+    mutate(across(everything(), as.numeric)) %>%
+    drop_na() %>%
+    omega(plot = FALSE) %>%
+    print()
+}
+
+### Omega der F-SozU K-6
+
+cat("\n=== Soziale Unterstützung Reliabilität ===\n")
+for (s in c("de", "us")) {
+  cat("\nSample:", toupper(s), "\n")
+  df_all %>%
+    filter(sample == s) %>%
+    select(soz_support_understood, soz_support_trusted, soz_support_borrow,
+           soz_support_activities, soz_support_illness, soz_support_distress) %>%
+    drop_na() %>%
+    omega(plot = FALSE) %>%
+    print()
+}
