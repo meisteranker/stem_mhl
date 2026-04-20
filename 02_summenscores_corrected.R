@@ -21,13 +21,25 @@ df_all <- df_all |>
 
 # Ethnische Variablen in Prioritätsreihenfolge
 eth_vars <- c(
-  "eth_white", "eth_black", "eth_latinx", "eth_asian",
-  "eth_indigenous_native", "eth_pacific", "eth_unspecified")
+  "eth_white",
+  "eth_black",
+  "eth_latinx",
+  "eth_asian",
+  "eth_indigenous_native",
+  "eth_pacific",
+  "eth_unspecified"
+)
 
 # Labels in derselben Reihenfolge
 eth_labels <- c(
-  "White", "Black", "Latinx", "Asian",
-  "Indigenous/Native", "Pacific", "Unspecified")
+  "White",
+  "Black",
+  "Latinx",
+  "Asian",
+  "Indigenous/Native",
+  "Pacific",
+  "Unspecified"
+)
 
 # Neue Variable `ethnicity`
 df_all <- df_all %>%
@@ -46,15 +58,29 @@ df_all <- df_all %>%
 
 # Gender-Variablen + Labels in der gewünschten Reihenfolge
 gender_vars <- c(
-  "gender_female", "gender_male", "gender_cis", "gender_dyadic",
-  "gender_inter", "gender_nonbinary", "gender_questioning",
-  "gender_trans", "gender_na", "gender_other"
+  "gender_female",
+  "gender_male",
+  "gender_cis",
+  "gender_dyadic",
+  "gender_inter",
+  "gender_nonbinary",
+  "gender_questioning",
+  "gender_trans",
+  "gender_na",
+  "gender_other"
 )
 
 gender_labels <- c(
-  "Female", "Male", "Cis", "Dyadic",
-  "Intersex", "Nonbinary", "Questioning",
-  "Trans", "Prefer not to say", "Other"
+  "Female",
+  "Male",
+  "Cis",
+  "Dyadic",
+  "Intersex",
+  "Nonbinary",
+  "Questioning",
+  "Trans",
+  "Prefer not to say",
+  "Other"
 )
 
 # Neue Variable "gender_combined" mit allen gecheckten Labels (durch Semikolon getrennt)
@@ -67,20 +93,32 @@ df_all <- df_all %>%
         checked <- c(...)
         labels <- gender_labels[checked == 2]
         str_c(labels, collapse = "; ")
-      }))
+      }
+    )
+  )
 
 # gender simple
 
 df_all <- df_all %>%
   mutate(
     gender_simple = case_when(
-      str_detect(gender, "Male") & !str_detect(gender, "Nonbinary|Trans|Questioning|Other|Female") ~ "Male",
-      str_detect(gender, "Female") & !str_detect(gender, "Nonbinary|Trans|Questioning|Other|Male") ~ "Female",
+      str_detect(gender, "Male") &
+        !str_detect(
+          gender,
+          "Nonbinary|Trans|Questioning|Other|Female"
+        ) ~ "Male",
+      str_detect(gender, "Female") &
+        !str_detect(
+          gender,
+          "Nonbinary|Trans|Questioning|Other|Male"
+        ) ~ "Female",
       str_detect(gender, "Nonbinary") ~ "Nonbinary",
       str_detect(gender, "Trans") ~ "Trans",
       str_detect(gender, "Other") ~ "Other",
       str_detect(gender, "Prefer not to say") ~ "Prefer not to say",
-      TRUE ~ NA_character_))
+      TRUE ~ NA_character_
+    )
+  )
 
 # gender dichotomous
 
@@ -89,91 +127,121 @@ df_all <- df_all %>%
     gender_binary = case_when(
       gender_simple == "Male" ~ "Male",
       gender_simple == "Female" ~ "Female",
-      TRUE ~ NA_character_))
+      TRUE ~ NA_character_
+    )
+  )
 
 ### Position
 
 # FIX [minor]: pos_other_text entfernt (Character-Variable, == 2 Vergleich sinnlos)
 position_vars <- c(
-  "pos_professor", "pos_junior_prof", "pos_priv_docent", "pos_group_leader", 
-  "pos_postdoc", "pos_akad_council", "pos_other",
-  "pos_assist_prof", "pos_assoc_prof", "pos_full_prof", "pos_dist_prof",
-  "pos_lecturer", "pos_instructor", "pos_assist_teach_prof", 
-  "pos_assoc_teach_prof", "pos_teach_prof", 
-  "pos_assist_res_prof", "pos_assoc_res_prof", "pos_res_prof",
+  "pos_professor",
+  "pos_junior_prof",
+  "pos_priv_docent",
+  "pos_group_leader",
+  "pos_postdoc",
+  "pos_akad_council",
+  "pos_other",
+  "pos_assist_prof",
+  "pos_assoc_prof",
+  "pos_full_prof",
+  "pos_dist_prof",
+  "pos_lecturer",
+  "pos_instructor",
+  "pos_assist_teach_prof",
+  "pos_assoc_teach_prof",
+  "pos_teach_prof",
+  "pos_assist_res_prof",
+  "pos_assoc_res_prof",
+  "pos_res_prof",
   "pos_prof"
 )
 
 # Neue Variable 'position' erstellen
 # FIX [minor]: pick() statt across() ohne Funktion
 df_all <- df_all %>%
-  mutate(position = pmap_chr(pick(all_of(position_vars)), function(...) {
-    vals <- c(...)
-    first_checked <- which(vals == 2)[1]
-    if (!is.na(first_checked)) {
-      return(position_vars[first_checked])
-    } else {
-      return(NA_character_)
-    }
-  }))
+  mutate(
+    position = pmap_chr(pick(all_of(position_vars)), function(...) {
+      vals <- c(...)
+      first_checked <- which(vals == 2)[1]
+      if (!is.na(first_checked)) {
+        return(position_vars[first_checked])
+      } else {
+        return(NA_character_)
+      }
+    })
+  )
 
 # Position clean
 
 df_all <- df_all %>%
   mutate(
     position_clean = case_when(
-      str_detect(position, "full_prof|professor|dist_prof|^pos_prof$") ~ "Professor",
-      str_detect(position, "junior_prof|assist_prof") ~ "Assistant/Junior Professor",
+      str_detect(
+        position,
+        "full_prof|professor|dist_prof|^pos_prof$"
+      ) ~ "Professor",
+      str_detect(
+        position,
+        "junior_prof|assist_prof"
+      ) ~ "Assistant/Junior Professor",
       str_detect(position, "assoc_prof") ~ "Associate Professor",
-      str_detect(position, "teach_prof|lecturer|instructor") ~ "Lecturer/Instructor",
+      str_detect(
+        position,
+        "teach_prof|lecturer|instructor"
+      ) ~ "Lecturer/Instructor",
       str_detect(position, "postdoc|group_leader") ~ "Postdoc / Group Leader",
-      str_detect(position, "akad_council|priv_docent") ~ "Priv. Dozent / Council",
+      str_detect(
+        position,
+        "akad_council|priv_docent"
+      ) ~ "Priv. Dozent / Council",
       str_detect(position, "res_prof") ~ "Research Professor",
       is.na(position) | str_detect(position, "other") ~ "Other / Unknown",
-      TRUE ~ "Other / Unknown"),
-    position_clean = factor(position_clean))
+      TRUE ~ "Other / Unknown"
+    ),
+    position_clean = factor(position_clean)
+  )
 
 # Position harmonized
 
 df_all <- df_all %>%
   mutate(
     position_harmonized = case_when(
-      
       # 1. Senior faculty
       pos_full_prof == 2 |
-      pos_dist_prof == 2 |
-      pos_prof == 2 |
-      pos_professor == 2 |
-      pos_priv_docent == 2 ~ "Senior faculty",
+        pos_dist_prof == 2 |
+        pos_prof == 2 |
+        pos_professor == 2 |
+        pos_priv_docent == 2 ~ "Senior faculty",
 
       # 2. Mid-level faculty
       pos_assoc_prof == 2 |
-      pos_assist_prof == 2 |
-      pos_junior_prof == 2 ~ "Mid-level faculty",
+        pos_assist_prof == 2 |
+        pos_junior_prof == 2 ~ "Mid-level faculty",
 
       # 3. Research leadership
       pos_group_leader == 2 |
-      pos_res_prof == 2 |
-      pos_assoc_res_prof == 2 |
-      pos_assist_res_prof == 2 ~ "Research leadership",
+        pos_res_prof == 2 |
+        pos_assoc_res_prof == 2 |
+        pos_assist_res_prof == 2 ~ "Research leadership",
 
       # 4. Teaching-focused
       pos_lecturer == 2 |
-      pos_instructor == 2 |
-      pos_teach_prof == 2 |
-      pos_assoc_teach_prof == 2 |
-      pos_assist_teach_prof == 2 ~ "Teaching-focused staff",
+        pos_instructor == 2 |
+        pos_teach_prof == 2 |
+        pos_assoc_teach_prof == 2 |
+        pos_assist_teach_prof == 2 ~ "Teaching-focused staff",
 
       # 5. Early career
       pos_postdoc == 2 ~ "Early career researcher",
 
       # 6. Other
       pos_akad_council == 2 |
-      pos_other == 2 ~ "Other",
+        pos_other == 2 ~ "Other",
 
       TRUE ~ NA_character_
     ),
-    
+
     position_harmonized = factor(
       position_harmonized,
       levels = c(
@@ -190,23 +258,23 @@ df_all <- df_all %>%
 ### field
 
 field_labels <- c(
-  field_biology     = "Biology",
-  field_chemistry   = "Chemistry",
+  field_biology = "Biology",
+  field_chemistry = "Chemistry",
   field_engineering = "Engineering (gen.)",
-  field_aerospace   = "Aerospace",
+  field_aerospace = "Aerospace",
   field_biomedicine = "Biomedicine",
-  field_comp_eng    = "Computer Eng.",
-  field_chem_eng    = "Chemical Eng.",
-  field_civil_eng   = "Civil Eng.",
-  field_electrical  = "Electrical Eng.",
-  field_env_eng     = "Environmental Eng.",
-  field_nuclear     = "Nuclear Eng.",
-  field_materials   = "Materials",
-  field_math        = "Math",
-  field_physics     = "Physics",
-  field_cs          = "Computer Science",
-  field_mechanical  = "Mechanical Eng.",
-  field_other       = "Other"
+  field_comp_eng = "Computer Eng.",
+  field_chem_eng = "Chemical Eng.",
+  field_civil_eng = "Civil Eng.",
+  field_electrical = "Electrical Eng.",
+  field_env_eng = "Environmental Eng.",
+  field_nuclear = "Nuclear Eng.",
+  field_materials = "Materials",
+  field_math = "Math",
+  field_physics = "Physics",
+  field_cs = "Computer Science",
+  field_mechanical = "Mechanical Eng.",
+  field_other = "Other"
 )
 
 # Extrahiere nur Variablennamen (technische Namen)
@@ -249,7 +317,9 @@ df_all <- df_all %>%
       str_detect(field, "Aerospace") ~ "Aerospace",
       str_detect(field, "Biomedicine") ~ "Biomedicine",
       str_detect(field, "Other") ~ "Other",
-      TRUE ~ NA_character_))
+      TRUE ~ NA_character_
+    )
+  )
 
 # field grouped
 
@@ -261,10 +331,25 @@ df_all <- df_all %>%
       str_detect(field_simple, "Biology|Biomedicine") ~ "Biology",
       str_detect(field_simple, "Math|Computer Science") ~ "Math & CS",
       str_detect(field_simple, "Materials Science") ~ "Materials Science",
-      str_detect(field_simple, "Engineering|Electrical Engineering|Mechanical Engineering|Civil Engineering|Aerospace|Environmental Engineering") ~ "Engineering",
-      TRUE ~ "Other / Interdisciplinary"),
-    field_grouped = factor(field_grouped,
-                           levels = sort(c("Physics", "Chemistry", "Biology", "Math & CS", "Engineering", "Materials Science", "Other / Interdisciplinary"))))
+      str_detect(
+        field_simple,
+        "Engineering|Electrical Engineering|Mechanical Engineering|Civil Engineering|Aerospace|Environmental Engineering"
+      ) ~ "Engineering",
+      TRUE ~ "Other / Interdisciplinary"
+    ),
+    field_grouped = factor(
+      field_grouped,
+      levels = sort(c(
+        "Physics",
+        "Chemistry",
+        "Biology",
+        "Math & CS",
+        "Engineering",
+        "Materials Science",
+        "Other / Interdisciplinary"
+      ))
+    )
+  )
 
 # field_harmonized
 
@@ -315,24 +400,51 @@ df_all <- df_all %>%
     )
   )
 
+### Field reduced
+
+df_all <- df_all %>%
+  mutate(
+    field_reduced = case_when(
+      field_harmonized %in% c("Biological Sciences") ~ "Life Sciences",
+
+      field_harmonized %in%
+        c(
+          "Chemistry & Materials Science",
+          "Physics",
+          "Engineering"
+        ) ~ "Physical & Engineering Sciences",
+
+      field_harmonized %in%
+        c("Mathematics & Computer Science") ~ "Math & Computer Science",
+
+      field_harmonized %in% c("Multidisciplinary") ~ "Multidisciplinary",
+
+      field_harmonized %in% c("Other") ~ "Other",
+
+      TRUE ~ NA_character_
+    ),
+
+    field_reduced = factor(field_reduced)
+  )
+
 ### study
 
 study_labels <- c(
-  study_biology     = "Biology",
-  study_chemistry   = "Chemistry",
-  study_aerospace   = "Aerospace",
+  study_biology = "Biology",
+  study_chemistry = "Chemistry",
+  study_aerospace = "Aerospace",
   study_biomedicine = "Biomedicine",
-  study_comp_eng    = "Computer Eng.",
-  study_chem_eng    = "Chemical Eng.",
-  study_civil_eng   = "Civil Eng.",
-  study_electrical  = "Electrical Eng.",
-  study_env_eng     = "Environmental Eng.",
-  study_nuclear     = "Nuclear Eng.",
-  study_materials   = "Materials",
-  study_math        = "Math",
-  study_physics     = "Physics",
-  study_cs          = "Computer Science",
-  study_other       = "Other"
+  study_comp_eng = "Computer Eng.",
+  study_chem_eng = "Chemical Eng.",
+  study_civil_eng = "Civil Eng.",
+  study_electrical = "Electrical Eng.",
+  study_env_eng = "Environmental Eng.",
+  study_nuclear = "Nuclear Eng.",
+  study_materials = "Materials",
+  study_math = "Math",
+  study_physics = "Physics",
+  study_cs = "Computer Science",
+  study_other = "Other"
 )
 
 # Variablennamen extrahieren
@@ -348,7 +460,10 @@ df_all <- df_all %>%
       if (length(checked) > 0) {
         str_c(checked, collapse = ", ")
       } else {
-        NA_character_}}))
+        NA_character_
+      }
+    })
+  )
 
 # study simple
 # FIX [minor]: Redundantes library(tidyverse) entfernt
@@ -372,7 +487,9 @@ df_all <- df_all %>%
       str_detect(study, "Aerospace") ~ "Aerospace",
       str_detect(study, "Biomedicine") ~ "Biomedicine",
       str_detect(study, "Other") ~ "Other",
-      TRUE ~ NA_character_))
+      TRUE ~ NA_character_
+    )
+  )
 
 ###############################################################################
 ### SUMMENSCORES
@@ -386,7 +503,13 @@ df_all <- df_all %>%
 
 df_all <- df_all %>%
   mutate(across(
-    c(who5_positive_mood, who5_relaxed, who5_energetic, who5_restful_sleep, who5_interest_life),
+    c(
+      who5_positive_mood,
+      who5_relaxed,
+      who5_energetic,
+      who5_restful_sleep,
+      who5_interest_life
+    ),
     ~ 6 - .x
   ))
 
@@ -395,11 +518,28 @@ df_all <- df_all %>%
 df_all <- df_all %>%
   mutate(
     who5_raw = rowSums(
-      select(., who5_positive_mood, who5_relaxed, who5_energetic, who5_restful_sleep, who5_interest_life),
+      select(
+        .,
+        who5_positive_mood,
+        who5_relaxed,
+        who5_energetic,
+        who5_restful_sleep,
+        who5_interest_life
+      ),
       na.rm = TRUE
     ),
     who5_raw = if_else(
-      rowSums(!is.na(select(., who5_positive_mood, who5_relaxed, who5_energetic, who5_restful_sleep, who5_interest_life))) == 0,
+      rowSums(
+        !is.na(select(
+          .,
+          who5_positive_mood,
+          who5_relaxed,
+          who5_energetic,
+          who5_restful_sleep,
+          who5_interest_life
+        ))
+      ) ==
+        0,
       NA_real_,
       who5_raw
     )
@@ -416,10 +556,18 @@ df_all <- df_all %>%
 ## Items umkodieren
 
 ghq_items <- c(
-  "ghq12_sleep_worries", "ghq12_pressure", "ghq12_concentration", "ghq12_useful",
-  "ghq12_deal_problems", "ghq12_decision_difficulty", "ghq12_overwhelmed",
-  "ghq12_contentment", "ghq12_daily_duties", "ghq12_depressed",
-  "ghq12_low_confidence", "ghq12_worthless"
+  "ghq12_sleep_worries",
+  "ghq12_pressure",
+  "ghq12_concentration",
+  "ghq12_useful",
+  "ghq12_deal_problems",
+  "ghq12_decision_difficulty",
+  "ghq12_overwhelmed",
+  "ghq12_contentment",
+  "ghq12_daily_duties",
+  "ghq12_depressed",
+  "ghq12_low_confidence",
+  "ghq12_worthless"
 )
 
 df_all <- df_all %>%
@@ -457,23 +605,35 @@ df_all <- df_all %>%
       ~ as.numeric(.) - 1,
       .names = "{.col}_scored"
     )
-  )   # FIX [Syntax]: Schließende Klammer für mutate() hinzugefügt
+  ) # FIX [Syntax]: Schließende Klammer für mutate() hinzugefügt
 
 ## Summenscore
 
 df_all <- df_all %>%
   mutate(
     phq4_total = rowSums(
-      across(c(phq4_low_interest_scored, phq4_feeling_down_scored,
-               phq4_nervous_scored, phq4_worry_control_scored)),
+      across(c(
+        phq4_low_interest_scored,
+        phq4_feeling_down_scored,
+        phq4_nervous_scored,
+        phq4_worry_control_scored
+      )),
       na.rm = TRUE
     ),
     phq4_total = if_else(
-      rowSums(!is.na(across(c(phq4_low_interest_scored, phq4_feeling_down_scored,
-                              phq4_nervous_scored, phq4_worry_control_scored)))) == 0,
+      rowSums(
+        !is.na(across(c(
+          phq4_low_interest_scored,
+          phq4_feeling_down_scored,
+          phq4_nervous_scored,
+          phq4_worry_control_scored
+        )))
+      ) ==
+        0,
       NA_real_,
-      phq4_total)
-  )   # FIX [Syntax]: Schließende Klammer für mutate() hinzugefügt
+      phq4_total
+    )
+  ) # FIX [Syntax]: Schließende Klammer für mutate() hinzugefügt
 
 ### GAD-7
 # FIX [kritisch]: Alle 7 Items einbeziehen.
@@ -498,13 +658,13 @@ df_all <- df_all |>
 
 # Alle 7 GAD-7 Items für den Summenscore (Range: 0-21)
 gad_items_all <- c(
-  "phq4_nervous_scored",       # GAD-7 Item 1 (aus PHQ-4)
+  "phq4_nervous_scored", # GAD-7 Item 1 (aus PHQ-4)
   "phq4_worry_control_scored", # GAD-7 Item 2 (aus PHQ-4)
-  "gad7_excess_worry",         # GAD-7 Item 3
-  "gad7_relax_difficulty",     # GAD-7 Item 4
-  "gad7_restlessness",         # GAD-7 Item 5
-  "gad7_irritability",         # GAD-7 Item 6
-  "gad7_fear_bad_happen"       # GAD-7 Item 7
+  "gad7_excess_worry", # GAD-7 Item 3
+  "gad7_relax_difficulty", # GAD-7 Item 4
+  "gad7_restlessness", # GAD-7 Item 5
+  "gad7_irritability", # GAD-7 Item 6
+  "gad7_fear_bad_happen" # GAD-7 Item 7
 )
 
 df_all <- df_all |>
@@ -521,15 +681,21 @@ df_all <- df_all |>
 
 df_all <- df_all %>%
   mutate(
-    fsozuk6 = rowMeans(across(
-      c(
-        soz_support_understood,
-        soz_support_trusted,
-        soz_support_borrow,
-        soz_support_activities,
-        soz_support_illness,
-        soz_support_distress
-      ), ~ as.numeric(.)), na.rm = TRUE))
+    fsozuk6 = rowMeans(
+      across(
+        c(
+          soz_support_understood,
+          soz_support_trusted,
+          soz_support_borrow,
+          soz_support_activities,
+          soz_support_illness,
+          soz_support_distress
+        ),
+        ~ as.numeric(.)
+      ),
+      na.rm = TRUE
+    )
+  )
 
 ### BRS
 # Codebook (Smith et al., 2008): 6 Items, 1-5 Skala
@@ -546,24 +712,27 @@ df_all <- df_all %>%
 
 df_all <- df_all %>%
   mutate(
-    brs_handle_stress_r        = 6 - as.numeric(brs_handle_stress),        # Item 2 (negativ)
-    brs_back_to_normal_r       = 6 - as.numeric(brs_back_to_normal),       # Item 4 (negativ) - NEU
-    brs_take_long_to_recover_r = 6 - as.numeric(brs_take_long_to_recover)  # Item 6 (negativ)
+    brs_handle_stress_r = 6 - as.numeric(brs_handle_stress), # Item 2 (negativ)
+    brs_back_to_normal_r = 6 - as.numeric(brs_back_to_normal), # Item 4 (negativ) - NEU
+    brs_take_long_to_recover_r = 6 - as.numeric(brs_take_long_to_recover) # Item 6 (negativ)
   ) %>%
   mutate(
     brs_score = rowMeans(
       tibble(
-        as.numeric(brs_recover_quickly),     # Item 1 (positiv)
-        brs_handle_stress_r,                 # Item 2 (invertiert)
-        as.numeric(brs_recover_fast),        # Item 3 (positiv)
-        brs_back_to_normal_r,                # Item 4 (invertiert) - FIX
-        as.numeric(brs_get_through),         # Item 5 (positiv)   - FIX: nicht mehr invertiert
-        brs_take_long_to_recover_r           # Item 6 (invertiert)
-      ), na.rm = TRUE))
+        as.numeric(brs_recover_quickly), # Item 1 (positiv)
+        brs_handle_stress_r, # Item 2 (invertiert)
+        as.numeric(brs_recover_fast), # Item 3 (positiv)
+        brs_back_to_normal_r, # Item 4 (invertiert) - FIX
+        as.numeric(brs_get_through), # Item 5 (positiv)   - FIX: nicht mehr invertiert
+        brs_take_long_to_recover_r # Item 6 (invertiert)
+      ),
+      na.rm = TRUE
+    )
+  )
 
 ### MHLQ
 
-   ### MHLQ
+### MHLQ
 # 29 Items in DE, 16 Items in US. Nur die 16 gemeinsamen Items gehen in den Score ein.
 # Fixes:
 #   - mhlq_brain hinzugefügt (fehlte komplett)
@@ -571,62 +740,93 @@ df_all <- df_all %>%
 
 # 1. Positiv gepolte Items (hohe Zustimmung = hohe MHL)
 mhlq_positive <- c(
-    "mhlq_sport", "mhlq_depr_symp", "mhlq_schizo_wahn", "mhlq_help_fam",
-    "mhlq_help_psy", "mhlq_sleep", "mhlq_self_help_psy", "mhlq_anx_panik",
-    "mhlq_psych_help", "mhlq_friend_help", "mhlq_nutri", "mhlq_interest",
-    "mhlq_duration", "mhlq_drugs", "mhlq_thoughts", "mhlq_fun",
-    "mhlq_schizo_hall", "mhlq_stress", "mhlq_self_psych",
-    "mhlq_alc", "mhlq_nonjdm", "mhlq_early",
-    "mhlq_brain"    # FIX: fehlte komplett
+  "mhlq_sport",
+  "mhlq_depr_symp",
+  "mhlq_schizo_wahn",
+  "mhlq_help_fam",
+  "mhlq_help_psy",
+  "mhlq_sleep",
+  "mhlq_self_help_psy",
+  "mhlq_anx_panik",
+  "mhlq_psych_help",
+  "mhlq_friend_help",
+  "mhlq_nutri",
+  "mhlq_interest",
+  "mhlq_duration",
+  "mhlq_drugs",
+  "mhlq_thoughts",
+  "mhlq_fun",
+  "mhlq_schizo_hall",
+  "mhlq_stress",
+  "mhlq_self_psych",
+  "mhlq_alc",
+  "mhlq_nonjdm",
+  "mhlq_early",
+  "mhlq_brain" # FIX: fehlte komplett
 )
 
 # 2. Negativ gepolte Items (hohe Zustimmung = niedrige MHL)
 #    FIX: mhlq_depr_real entfernt (wird separat behandelt wegen unterschiedlichem Inhalt DE/US)
 mhlq_negative <- c(
-    "mhlq_no_behav",
-    "mhlq_income",
-    "mhlq_no_affect",
-    "mhlq_adults_only",
-    "mhlq_helpless"
+  "mhlq_no_behav",
+  "mhlq_income",
+  "mhlq_no_affect",
+  "mhlq_adults_only",
+  "mhlq_helpless"
 )
 
 # 3. DE-only Items ausschließen (13 Items + 2 _r Versionen)
 exclude_vars <- c(
-    "mhlq_depr_symp", "mhlq_schizo_wahn", "mhlq_anx_panik", "mhlq_income",
-    "mhlq_nonjdm", "mhlq_alc", "mhlq_early", "mhlq_psych_help", "mhlq_friend_help",
-    "mhlq_interest", "mhlq_helpless", "mhlq_drugs", "mhlq_self_psych",
-    "mhlq_income_r", "mhlq_helpless_r"
+  "mhlq_depr_symp",
+  "mhlq_schizo_wahn",
+  "mhlq_anx_panik",
+  "mhlq_income",
+  "mhlq_nonjdm",
+  "mhlq_alc",
+  "mhlq_early",
+  "mhlq_psych_help",
+  "mhlq_friend_help",
+  "mhlq_interest",
+  "mhlq_helpless",
+  "mhlq_drugs",
+  "mhlq_self_psych",
+  "mhlq_income_r",
+  "mhlq_helpless_r"
 )
 
 # 4. Umwandlung in numeric
 df_all <- df_all |>
-    mutate(across(
-        all_of(c(mhlq_positive, mhlq_negative, "mhlq_depr_real")),
-        ~ as.numeric(.)
-    ))
+  mutate(across(
+    all_of(c(mhlq_positive, mhlq_negative, "mhlq_depr_real")),
+    ~ as.numeric(.)
+  ))
 
 # 5. Invertierung der regulären negativ gepolten Items
 df_all <- df_all |>
-    mutate(across(
-        all_of(mhlq_negative),
-        ~ ifelse(is.na(.x), NA, 6 - .x),
-        .names = "{.col}_r"
-    ))
+  mutate(across(
+    all_of(mhlq_negative),
+    ~ ifelse(is.na(.x), NA, 6 - .x),
+    .names = "{.col}_r"
+  ))
 
 # 6. mhlq_depr_real: sample-spezifische Invertierung
 #    DE (D602_23): "Depression ist keine echte psychische Störung" → negativ, invertieren
 #    US (U602_03): "Loss of interest or pleasure is a symptom of depression" → positiv, NICHT invertieren
 df_all <- df_all |>
-    mutate(
-        mhlq_depr_real_r = case_when(
-            sample == "de" ~ 6 - mhlq_depr_real,
-            sample == "us" ~ mhlq_depr_real,
-            TRUE           ~ NA_real_
-        )
+  mutate(
+    mhlq_depr_real_r = case_when(
+      sample == "de" ~ 6 - mhlq_depr_real,
+      sample == "us" ~ mhlq_depr_real,
+      TRUE ~ NA_real_
     )
+  )
 
 # 7. Zusammenführen aller Items, dann Ausschluss anwenden
-mhlq_all_items <- c(mhlq_positive, paste0(mhlq_negative, "_r"), "mhlq_depr_real_r")
+mhlq_all_items <- c(
+  mhlq_positive,
+  paste0(mhlq_negative, "_r"),
+  "mhlq_depr_real_r"
+)
 mhlq_all_items <- setdiff(mhlq_all_items, exclude_vars)
 
 # Kontrolle: sollte 16 Items ergeben
@@ -635,15 +835,15 @@ print(mhlq_all_items)
 
 # 8. Summen- und Mittelwertscore berechnen
 df_all <- df_all |>
-    rowwise() |>
-    mutate(
-        mhlq_score = {
-            vals <- c_across(all_of(mhlq_all_items))
-            if (all(is.na(vals))) NA_real_ else sum(vals, na.rm = TRUE)
-        },
-        mhlq_mean = mean(c_across(all_of(mhlq_all_items)), na.rm = TRUE)
-    ) |>
-    ungroup()
+  rowwise() |>
+  mutate(
+    mhlq_score = {
+      vals <- c_across(all_of(mhlq_all_items))
+      if (all(is.na(vals))) NA_real_ else sum(vals, na.rm = TRUE)
+    },
+    mhlq_mean = mean(c_across(all_of(mhlq_all_items)), na.rm = TRUE)
+  ) |>
+  ungroup()
 
 ## MHLQ Subskalen
 # FIX: mhlq_depr_real_r (korrekte sample-spezifische Invertierung)
@@ -651,48 +851,96 @@ df_all <- df_all |>
 # Hinweis: mhlq_brain geht in Gesamtscore ein, ist aber keiner Subskala zugeordnet
 
 mhlq_knowledge_items <- c(
-    "mhlq_schizo_hall", "mhlq_thoughts", "mhlq_duration", "mhlq_depr_real_r"
+  "mhlq_schizo_hall",
+  "mhlq_thoughts",
+  "mhlq_duration",
+  "mhlq_depr_real_r"
 )
 
 mhlq_stereotypes_items <- c(
-    "mhlq_no_affect_r", "mhlq_no_behav_r", "mhlq_adults_only_r"
+  "mhlq_no_affect_r",
+  "mhlq_no_behav_r",
+  "mhlq_adults_only_r"
 )
 
 mhlq_help_skills_items <- c(
-    "mhlq_help_fam", "mhlq_help_psy", "mhlq_self_help_psy"
+  "mhlq_help_fam",
+  "mhlq_help_psy",
+  "mhlq_self_help_psy"
 )
 
 mhlq_self_help_items <- c(
-    "mhlq_sport", "mhlq_sleep", "mhlq_nutri", "mhlq_fun"
+  "mhlq_sport",
+  "mhlq_sleep",
+  "mhlq_nutri",
+  "mhlq_fun"
 )
 
 df_all <- df_all %>%
-    rowwise() %>%
-    mutate(
-        mhlq_knowledge_score   = sum(c_across(all_of(mhlq_knowledge_items)), na.rm = TRUE),
-        mhlq_stereotypes_score = sum(c_across(all_of(mhlq_stereotypes_items)), na.rm = TRUE),
-        mhlq_help_skills_score = sum(c_across(all_of(mhlq_help_skills_items)), na.rm = TRUE),
-        mhlq_self_help_score   = sum(c_across(all_of(mhlq_self_help_items)), na.rm = TRUE)
-    ) %>%
-    ungroup()
+  rowwise() %>%
+  mutate(
+    mhlq_knowledge_score = sum(
+      c_across(all_of(mhlq_knowledge_items)),
+      na.rm = TRUE
+    ),
+    mhlq_stereotypes_score = sum(
+      c_across(all_of(mhlq_stereotypes_items)),
+      na.rm = TRUE
+    ),
+    mhlq_help_skills_score = sum(
+      c_across(all_of(mhlq_help_skills_items)),
+      na.rm = TRUE
+    ),
+    mhlq_self_help_score = sum(
+      c_across(all_of(mhlq_self_help_items)),
+      na.rm = TRUE
+    )
+  ) %>%
+  ungroup()
 
 ### MHLS
 
 mhls_exclude <- c(
-  "mhls4_avoidance", "mhls4_disclose", "mhls5_evening", "mhls5_vote", "mhls5_hire"
+  "mhls4_avoidance",
+  "mhls4_disclose",
+  "mhls5_evening",
+  "mhls5_vote",
+  "mhls5_hire"
 )
 
 mhls_max_4 <- c(
-  "mhls1_socphob", "mhls1_gad", "mhls1_depr", "mhls1_pers", "mhls1_dysth",
-  "mhls1_agora", "mhls1_bipol", "mhls1_subs", "mhls1_fem_more", "mhls1_male_anx",
-  "mhls2_sleep", "mhls2_avoid", "mhls3_kvt", "mhls3_break_danger", "mhls3_break_support"
+  "mhls1_socphob",
+  "mhls1_gad",
+  "mhls1_depr",
+  "mhls1_pers",
+  "mhls1_dysth",
+  "mhls1_agora",
+  "mhls1_bipol",
+  "mhls1_subs",
+  "mhls1_fem_more",
+  "mhls1_male_anx",
+  "mhls2_sleep",
+  "mhls2_avoid",
+  "mhls3_kvt",
+  "mhls3_break_danger",
+  "mhls3_break_support"
 )
 
 # Items mit 1-5 Skala
 mhls_max_5 <- c(
-  "mhls4_info", "mhls4_digital", "mhls4_apt", "mhls4_sources",
-  "mhls4_control", "mhls4_weakness", "mhls4_not_med", "mhls4_danger",
-  "mhls4_avoidance", "mhls4_disclose", "mhls5_evening", "mhls5_vote", "mhls5_hire"
+  "mhls4_info",
+  "mhls4_digital",
+  "mhls4_apt",
+  "mhls4_sources",
+  "mhls4_control",
+  "mhls4_weakness",
+  "mhls4_not_med",
+  "mhls4_danger",
+  "mhls4_avoidance",
+  "mhls4_disclose",
+  "mhls5_evening",
+  "mhls5_vote",
+  "mhls5_hire"
 )
 
 # FIX: Invertierte Items korrigiert (4er-Skala: 5 - x)
@@ -703,7 +951,12 @@ mhls_max_5 <- c(
 mhls_invert_4 <- c("mhls3_break_support", "mhls2_avoid", "mhls1_male_anx")
 
 # Invertierte Items (5er-Skala: 6 - x) – unverändert, korrekt
-mhls_invert_5 <- c("mhls4_control", "mhls4_weakness", "mhls4_not_med", "mhls4_danger")
+mhls_invert_5 <- c(
+  "mhls4_control",
+  "mhls4_weakness",
+  "mhls4_not_med",
+  "mhls4_danger"
+)
 
 # Umkodierung
 df_all <- df_all |>
@@ -725,17 +978,29 @@ df_all <- df_all |>
 #      mhls1_male_anx_r statt mhls1_male_anx (jetzt invertiert)
 
 mhls_items <- c(
-  "mhls1_socphob", "mhls1_gad", "mhls1_depr",
-  "mhls1_pers", "mhls1_dysth", "mhls1_agora",
-  "mhls1_bipol", "mhls1_subs", "mhls1_fem_more",
+  "mhls1_socphob",
+  "mhls1_gad",
+  "mhls1_depr",
+  "mhls1_pers",
+  "mhls1_dysth",
+  "mhls1_agora",
+  "mhls1_bipol",
+  "mhls1_subs",
+  "mhls1_fem_more",
   "mhls1_male_anx_r",
   "mhls2_sleep",
   "mhls2_avoid_r",
   "mhls3_kvt",
   "mhls3_break_danger",
   "mhls3_break_support_r",
-  "mhls4_info", "mhls4_digital", "mhls4_apt", "mhls4_sources",
-  "mhls4_control_r", "mhls4_weakness_r", "mhls4_not_med_r", "mhls4_danger_r"
+  "mhls4_info",
+  "mhls4_digital",
+  "mhls4_apt",
+  "mhls4_sources",
+  "mhls4_control_r",
+  "mhls4_weakness_r",
+  "mhls4_not_med_r",
+  "mhls4_danger_r"
 )
 
 df_all <- df_all |>
@@ -757,7 +1022,8 @@ mhsas_invert <- c(
   "mhsas_good",
   "mhsas_healing",
   "mhsas_satisfying",
-  "mhsas_desirable")
+  "mhsas_desirable"
+)
 
 # FIX [minor]: Kommentar korrigiert (5er-Skala, nicht 7er)
 # Invertiere die negativ gepolten Items (5er Skala: 6 - x)
@@ -778,7 +1044,8 @@ mhsas_items <- c(
   "mhsas_useful",
   "mhsas_healthy",
   "mhsas_effective",
-  "mhsas_empowering")
+  "mhsas_empowering"
+)
 
 #### Abteilungsklima
 
@@ -788,63 +1055,132 @@ df_all <- df_all %>%
   mutate(
     # SUBSKALA 1: Interpersonelles Klima (10 Items)
     # Umpolen wo nötig, dann DE und US zusammenführen
-    
-    cl1_friendly   = coalesce(6 - abtkl_freundlich, 6 - dep_climate_friendly),
-    cl1_nonracist  = coalesce(abtkl_rassistisch, dep_climate_racist),
-    cl1_diverse    = coalesce(abtkl_vielfalt, dep_climate_diverse),
+
+    cl1_friendly = coalesce(6 - abtkl_freundlich, 6 - dep_climate_friendly),
+    cl1_nonracist = coalesce(abtkl_rassistisch, dep_climate_racist),
+    cl1_diverse = coalesce(abtkl_vielfalt, dep_climate_diverse),
     cl1_respectful = coalesce(abtkl_respekt, dep_climate_respectful),
-    cl1_collegial  = coalesce(6 - abtkl_kollegial, 6 - dep_climate_collegial),
-    cl1_nonsexist  = coalesce(6 - abtkl_sexismus, 6 - dep_climate_sexist),
-    cl1_collab     = coalesce(6 - abtkl_kollab, 6 - dep_climate_individualistic),
-    cl1_coop       = coalesce(6 - abtkl_kooperativ, 6 - dep_climate_competitive),
-    cl1_nonhomoph  = coalesce(abtkl_homophob, dep_climate_homophobic),
+    cl1_collegial = coalesce(6 - abtkl_kollegial, 6 - dep_climate_collegial),
+    cl1_nonsexist = coalesce(6 - abtkl_sexismus, 6 - dep_climate_sexist),
+    cl1_collab = coalesce(6 - abtkl_kollab, 6 - dep_climate_individualistic),
+    cl1_coop = coalesce(6 - abtkl_kooperativ, 6 - dep_climate_competitive),
+    cl1_nonhomoph = coalesce(abtkl_homophob, dep_climate_homophobic),
     cl1_supportive = coalesce(abtkl_support, dep_climate_supportive),
-    
+
     # Score
-    climate1_mean = rowMeans(cbind(
-      cl1_friendly, cl1_nonracist, cl1_diverse, cl1_respectful,
-      cl1_collegial, cl1_nonsexist, cl1_collab, cl1_coop,
-      cl1_nonhomoph, cl1_supportive), na.rm = TRUE),
-    
+    climate1_mean = rowMeans(
+      cbind(
+        cl1_friendly,
+        cl1_nonracist,
+        cl1_diverse,
+        cl1_respectful,
+        cl1_collegial,
+        cl1_nonsexist,
+        cl1_collab,
+        cl1_coop,
+        cl1_nonhomoph,
+        cl1_supportive
+      ),
+      na.rm = TRUE
+    ),
+
     # SUBSKALA 2: Arbeitsatmosphäre (12 Items)
-    
-    cl2_research_valued = coalesce(abtkl_forsch_geschaetzt, dep_climate_research_valued),
-    cl2_no_fitin_press  = coalesce(6 - abtkl_anpassdruck, 6 - dep_climate_pressure_fitin),
-    cl2_no_tenure_press = coalesce(6 - abtkl_festanstellung_druck, 6 - dep_climate_pressure_tenure),
-    cl2_questions_ok    = coalesce(abtkl_leistung_fragen, dep_climate_questions_ok),
-    cl2_no_fear_speak   = coalesce(6 - abtkl_prob_ansprechen, 6 - dep_climate_fear_speakup),
-    cl2_no_gender_stereo = coalesce(6 - abtkl_gender_view, 6 - dep_climate_gender_stereotype),
-    cl2_no_ethnic_stereo = coalesce(6 - abtkl_ethnie_view, 6 - dep_climate_ethnicity_stereotype),
-    cl2_no_low_expect   = coalesce(6 - abtkl_erwartungen, 6 - dep_climate_low_expectations),
-    cl2_no_scrutiny     = coalesce(6 - abtkl_beobachtet, 6 - dep_climate_under_scrutiny),
-    cl2_no_work_harder  = coalesce(6 - abtkl_harter_weg, 6 - dep_climate_work_harder),
-    cl2_no_unwritten    = coalesce(6 - abtkl_regeln, 6 - dep_climate_unwritten_rules),
-    cl2_no_fit_in_diff  = coalesce(6 - abtkl_dazugehoeren, 6 - dep_climate_fit_in),
-    
+
+    cl2_research_valued = coalesce(
+      abtkl_forsch_geschaetzt,
+      dep_climate_research_valued
+    ),
+    cl2_no_fitin_press = coalesce(
+      6 - abtkl_anpassdruck,
+      6 - dep_climate_pressure_fitin
+    ),
+    cl2_no_tenure_press = coalesce(
+      6 - abtkl_festanstellung_druck,
+      6 - dep_climate_pressure_tenure
+    ),
+    cl2_questions_ok = coalesce(
+      abtkl_leistung_fragen,
+      dep_climate_questions_ok
+    ),
+    cl2_no_fear_speak = coalesce(
+      6 - abtkl_prob_ansprechen,
+      6 - dep_climate_fear_speakup
+    ),
+    cl2_no_gender_stereo = coalesce(
+      6 - abtkl_gender_view,
+      6 - dep_climate_gender_stereotype
+    ),
+    cl2_no_ethnic_stereo = coalesce(
+      6 - abtkl_ethnie_view,
+      6 - dep_climate_ethnicity_stereotype
+    ),
+    cl2_no_low_expect = coalesce(
+      6 - abtkl_erwartungen,
+      6 - dep_climate_low_expectations
+    ),
+    cl2_no_scrutiny = coalesce(
+      6 - abtkl_beobachtet,
+      6 - dep_climate_under_scrutiny
+    ),
+    cl2_no_work_harder = coalesce(
+      6 - abtkl_harter_weg,
+      6 - dep_climate_work_harder
+    ),
+    cl2_no_unwritten = coalesce(
+      6 - abtkl_regeln,
+      6 - dep_climate_unwritten_rules
+    ),
+    cl2_no_fit_in_diff = coalesce(
+      6 - abtkl_dazugehoeren,
+      6 - dep_climate_fit_in
+    ),
+
     # Score
-    climate2_mean = rowMeans(cbind(
-      cl2_research_valued, cl2_no_fitin_press, cl2_no_tenure_press,
-      cl2_questions_ok, cl2_no_fear_speak, cl2_no_gender_stereo,
-      cl2_no_ethnic_stereo, cl2_no_low_expect, cl2_no_scrutiny,
-      cl2_no_work_harder, cl2_no_unwritten, cl2_no_fit_in_diff), na.rm = TRUE),
-    
+    climate2_mean = rowMeans(
+      cbind(
+        cl2_research_valued,
+        cl2_no_fitin_press,
+        cl2_no_tenure_press,
+        cl2_questions_ok,
+        cl2_no_fear_speak,
+        cl2_no_gender_stereo,
+        cl2_no_ethnic_stereo,
+        cl2_no_low_expect,
+        cl2_no_scrutiny,
+        cl2_no_work_harder,
+        cl2_no_unwritten,
+        cl2_no_fit_in_diff
+      ),
+      na.rm = TRUE
+    ),
+
     # SUBSKALA 3: Wahrgenommener Einfluss (9 Items)
-    
-    cl3_curriculum  = coalesce(abtkl_lehrplan, dep_climate_curriculum),
-    cl3_salary      = coalesce(abtkl_gehalt, dep_climate_salary_increase),
-    cl3_travel      = coalesce(abtkl_reisekosten, dep_climate_travel_funding),
-    cl3_equipment   = coalesce(abtkl_geraete, dep_climate_research_resources),
-    cl3_students    = coalesce(abtkl_promiwahl, dep_climate_select_students),
-    cl3_faculty     = coalesce(abtkl_fakwahl, dep_climate_select_faculty),
-    cl3_tenure      = coalesce(abtkl_festanstellung, dep_climate_tenure_decision),
-    cl3_leadership  = coalesce(abtkl_leitung, dep_climate_select_leadership),
-    cl3_culture     = coalesce(abtkl_klima, dep_climate_overall_culture),
-    
+
+    cl3_curriculum = coalesce(abtkl_lehrplan, dep_climate_curriculum),
+    cl3_salary = coalesce(abtkl_gehalt, dep_climate_salary_increase),
+    cl3_travel = coalesce(abtkl_reisekosten, dep_climate_travel_funding),
+    cl3_equipment = coalesce(abtkl_geraete, dep_climate_research_resources),
+    cl3_students = coalesce(abtkl_promiwahl, dep_climate_select_students),
+    cl3_faculty = coalesce(abtkl_fakwahl, dep_climate_select_faculty),
+    cl3_tenure = coalesce(abtkl_festanstellung, dep_climate_tenure_decision),
+    cl3_leadership = coalesce(abtkl_leitung, dep_climate_select_leadership),
+    cl3_culture = coalesce(abtkl_klima, dep_climate_overall_culture),
+
     # Score
-    climate3_mean = rowMeans(cbind(
-      cl3_curriculum, cl3_salary, cl3_travel, cl3_equipment,
-      cl3_students, cl3_faculty, cl3_tenure, cl3_leadership,
-      cl3_culture), na.rm = TRUE)
+    climate3_mean = rowMeans(
+      cbind(
+        cl3_curriculum,
+        cl3_salary,
+        cl3_travel,
+        cl3_equipment,
+        cl3_students,
+        cl3_faculty,
+        cl3_tenure,
+        cl3_leadership,
+        cl3_culture
+      ),
+      na.rm = TRUE
+    )
   )
 
 # Berechne den Mittelwert als Gesamtscore
