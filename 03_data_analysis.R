@@ -29,14 +29,14 @@ df_all <- df_all %>% mutate (field = as.factor(field))
 df_all <- df_all %>% mutate (study = as.factor(study))
 df_all <- df_all %>% mutate (position = as.factor(position))
 df_all <- df_all %>% mutate (age = as.numeric(age))
-df_all <- df_all %>% mutate (ghq12_likert = as.numeric(ghq12_likert))
+df_all <- df_all %>% mutate (ghq12_sum = as.numeric(ghq12_sum))
 df_all <- df_all %>% mutate (gad = as.numeric(gad))
 df_all <- df_all %>% mutate (brs_score = as.numeric(brs_score))
 df_all <- df_all %>% mutate (mhlq_score = as.numeric(mhlq_score))
 
 #### descriptive statistics
 
-### Table: age, ethnicity, gender_simple
+### age, ethnicity, gender
 
 df_all %>%
   select(sample, age, ethnicity, gender_simple) %>%
@@ -49,6 +49,32 @@ df_all %>%
   add_p() %>%
   bold_labels() %>%
   modify_header(label ~ "**Variable**")
+
+df_all %>%
+  count(sample, ethnicity = replace_na(ethnicity, "Unspecified"), name = "n") %>%
+  group_by(sample) %>%
+  mutate(
+    sample_total = sum(n),
+    percent = round(100 * n / sample_total, 2)
+  ) %>%
+  ungroup() %>%
+  arrange(sample, ethnicity)
+
+df_all %>%
+  mutate(
+    gender_simple = case_when(
+      gender_simple %in% c("Other", "Trans", "Nonbinary") ~ "Other/Trans/Nonbinary",
+      TRUE ~ gender_simple
+    )
+  ) %>%
+  count(sample, gender_simple = replace_na(gender_simple, "Prefer not to say"), name = "n") %>%
+  group_by(sample) %>%
+  mutate(
+    sample_total = sum(n),
+    percent = round(n / sample_total * 100, 2)
+  ) %>%
+  ungroup() %>%
+  arrange(sample, gender_simple)
 
 ## plots: age, ethnicity, gender
 
@@ -73,6 +99,18 @@ df_all %>%
 plot_grpfrq(df_all$position_simple, df_all$sample, show.values = T) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+## Position harmonized
+
+df_all %>%
+  mutate(
+    position_harmonized = fct_explicit_na(position_harmonized, "Other")
+  ) %>%
+  count(sample, position_harmonized, name = "n") %>%
+  group_by(sample) %>%
+  mutate(percent = round(n / sum(n) * 100, 2)) %>%
+  ungroup() %>%
+  arrange(sample, position_harmonized)
+
 ### Table: field_simple
 
 df_all %>%
@@ -85,6 +123,15 @@ df_all %>%
   bold_labels() %>%
   modify_header(label ~ "**Variable**")
 
+### field_harmonized
+
+df_all %>%
+  count(sample, field_harmonized, name = "n") %>%
+  group_by(sample) %>%
+  mutate(percent = round(n / sum(n) * 100, 2)) %>%
+  ungroup() %>%
+  arrange(sample, field_harmonized)
+
 ### Table: study_simple
 
 df_all %>%
@@ -96,6 +143,22 @@ df_all %>%
     missing = "no") %>%
   bold_labels() %>%
   modify_header(label ~ "**Variable**")
+
+###  Tenure
+
+df_all %>%
+  mutate(
+    tenure_simple = case_when(
+      tenure == 1 ~ "yes",
+      tenure == 2 ~ "no",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  count(sample, tenure_simple, name = "n") %>%
+  group_by(sample) %>%
+  mutate(percent = round(n / sum(n) * 100, 2)) %>%
+  ungroup() %>%
+  arrange(sample, tenure_simple)
 
 ### Table: who, ghq, phq, gad, brs
 

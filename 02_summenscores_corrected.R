@@ -31,16 +31,16 @@ eth_labels <- c(
 
 # Neue Variable `ethnicity`
 df_all <- df_all %>%
-  mutate(ethnicity = NA_character_) 
-
-for (i in seq_along(eth_vars)) {
-  df_all <- df_all %>%
-    mutate(
-      ethnicity = if_else(
-        is.na(ethnicity) & .data[[eth_vars[i]]] == 2,
-        eth_labels[i],
-        ethnicity))
-}
+  mutate(
+    ethnicity = pmap_chr(
+      pick(all_of(eth_vars)),
+      ~ {
+        vals <- c(...)
+        first_checked <- which(vals == 2)[1]
+        if (!is.na(first_checked)) eth_labels[first_checked] else NA_character_
+      }
+    )
+  )
 
 ### Gender
 
@@ -133,6 +133,60 @@ df_all <- df_all %>%
       TRUE ~ "Other / Unknown"),
     position_clean = factor(position_clean))
 
+# Position harmonized
+
+df_all <- df_all %>%
+  mutate(
+    position_harmonized = case_when(
+      
+      # 1. Senior faculty
+      pos_full_prof == 2 |
+      pos_dist_prof == 2 |
+      pos_prof == 2 |
+      pos_professor == 2 |
+      pos_priv_docent == 2 ~ "Senior faculty",
+
+      # 2. Mid-level faculty
+      pos_assoc_prof == 2 |
+      pos_assist_prof == 2 |
+      pos_junior_prof == 2 ~ "Mid-level faculty",
+
+      # 3. Research leadership
+      pos_group_leader == 2 |
+      pos_res_prof == 2 |
+      pos_assoc_res_prof == 2 |
+      pos_assist_res_prof == 2 ~ "Research leadership",
+
+      # 4. Teaching-focused
+      pos_lecturer == 2 |
+      pos_instructor == 2 |
+      pos_teach_prof == 2 |
+      pos_assoc_teach_prof == 2 |
+      pos_assist_teach_prof == 2 ~ "Teaching-focused staff",
+
+      # 5. Early career
+      pos_postdoc == 2 ~ "Early career researcher",
+
+      # 6. Other
+      pos_akad_council == 2 |
+      pos_other == 2 ~ "Other",
+
+      TRUE ~ NA_character_
+    ),
+    
+    position_harmonized = factor(
+      position_harmonized,
+      levels = c(
+        "Early career researcher",
+        "Teaching-focused staff",
+        "Research leadership",
+        "Mid-level faculty",
+        "Senior faculty",
+        "Other"
+      )
+    )
+  )
+
 ### field
 
 field_labels <- c(
@@ -211,6 +265,55 @@ df_all <- df_all %>%
       TRUE ~ "Other / Interdisciplinary"),
     field_grouped = factor(field_grouped,
                            levels = sort(c("Physics", "Chemistry", "Biology", "Math & CS", "Engineering", "Materials Science", "Other / Interdisciplinary"))))
+
+# field_harmonized
+
+field_map <- c(
+  "Biology" = "Biological Sciences",
+  "Biomedicine" = "Biological Sciences",
+  "Chemistry" = "Chemistry & Materials Science",
+  "Materials" = "Chemistry & Materials Science",
+  "Chemical Eng." = "Chemistry & Materials Science",
+  "Physics" = "Physics",
+  "Engineering (gen.)" = "Engineering",
+  "Civil Eng." = "Engineering",
+  "Mechanical Eng." = "Engineering",
+  "Electrical Eng." = "Engineering",
+  "Environmental Eng." = "Engineering",
+  "Aerospace" = "Engineering",
+  "Nuclear Eng." = "Engineering",
+  "Computer Eng." = "Engineering",
+  "Math" = "Mathematics & Computer Science",
+  "Computer Science" = "Mathematics & Computer Science",
+  "Other" = "Other"
+)
+
+df_all <- df_all %>%
+  mutate(
+    field_split = str_split(field, ",\\s*"),
+    field_broad_list = map(
+      field_split,
+      ~ unname(field_map[.x]) |> unique() |> na.omit()
+    ),
+    n_field_broad = map_int(field_broad_list, length),
+    field_harmonized = case_when(
+      n_field_broad == 0 ~ NA_character_,
+      n_field_broad == 1 ~ map_chr(field_broad_list, 1),
+      TRUE ~ "Multidisciplinary"
+    ),
+    field_harmonized = factor(
+      field_harmonized,
+      levels = c(
+        "Biological Sciences",
+        "Chemistry & Materials Science",
+        "Physics",
+        "Engineering",
+        "Mathematics & Computer Science",
+        "Multidisciplinary",
+        "Other"
+      )
+    )
+  )
 
 ### study
 

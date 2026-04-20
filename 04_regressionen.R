@@ -70,7 +70,6 @@ df_all <- df_all |>
 who_reg <- lm(who5_raw ~ sample + tenure + age + gender_binary + ethnicity_dich + children + partnered + climate1_mean + climate2_mean + climate3_mean + 
   brs_score + fsozuk6, data = df_all)
 
-
 ## Ergebnis
 
 model_parameters(who_reg, include_info = TRUE) 
@@ -92,7 +91,6 @@ k_pred <- length(coef(who_reg)) - 1
 
 r2 <- performance::r2(who_reg)$R2
 pwr.f2.test(u = k_pred, v = n_obs - k_pred - 1, f2 = r2 / (1 - r2), sig.level = 0.05)
-
 
 ### Mental distress
 
