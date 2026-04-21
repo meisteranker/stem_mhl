@@ -7,7 +7,7 @@ library(pwr)
 
 #### Daten laden
 
-df_all <- read_csv("data_all_tidy.csv")
+df_all <- read_csv("data_all_tidy_2.csv")
 
 df_all <- df_all %>%
   filter(
@@ -30,6 +30,7 @@ df_all$mhlq_score <- as.numeric(df_all$mhlq_score)
 df_all$mhsas <- as.numeric(df_all$mhsas)
 df_all$has_children <- as.factor(df_all$has_children)
 df_all$partnered <- as.factor(df_all$partnered)
+df_all$field_reduced <- as.factor(df_all$field_reduced)
 
 ### ethnicity dichotom
 
@@ -123,7 +124,7 @@ ghq_reg <- lm(
     climate1_mean +
     climate2_mean +
     climate3_mean +
-    field_harmonized +
+    field_reduced +
     brs_score +
     fsozuk6,
   data = df_all
@@ -170,7 +171,7 @@ gad_reg <- lm(
     climate1_mean +
     climate2_mean +
     climate3_mean +
-    field_harmonized +
+    field_reduced +
     brs_score +
     fsozuk6,
   data = df_all
@@ -217,7 +218,7 @@ mhlq_reg <- lm(
     climate1_mean +
     climate2_mean +
     climate3_mean +
-    field_harmonized +
+    field_reduced  +
     brs_score +
     fsozuk6,
   data = df_all
@@ -262,7 +263,7 @@ mhsas_reg <- lm(
     climate1_mean +
     climate2_mean +
     climate3_mean +
-    field_harmonized +
+    field_reduced +
     brs_score +
     fsozuk6,
   data = df_all

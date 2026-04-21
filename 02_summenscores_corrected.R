@@ -383,7 +383,10 @@ df_all <- df_all %>%
     n_field_broad = map_int(field_broad_list, length),
     field_harmonized = case_when(
       n_field_broad == 0 ~ NA_character_,
-      n_field_broad == 1 ~ map_chr(field_broad_list, 1),
+      n_field_broad == 1 ~ map_chr(
+        field_broad_list,
+        ~ pluck(.x, 1, .default = NA_character_)
+      ),
       TRUE ~ "Multidisciplinary"
     ),
     field_harmonized = factor(
@@ -1189,4 +1192,4 @@ df_all <- df_all %>%
   mutate(mhsas = mean(c_across(all_of(mhsas_items)), na.rm = TRUE)) %>%
   ungroup()
 
-data_write(df_all, "data_all_tidy.csv")
+data_write(df_all, "data_all_tidy_2.csv")
