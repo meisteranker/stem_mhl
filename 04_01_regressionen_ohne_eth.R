@@ -20,6 +20,8 @@ df_all <- df_all %>%
 ### Class zuweisen
 
 df_all$who5_raw <- as.numeric(df_all$who5_raw)
+df_all$who5_norm <- as.numeric(df_all$who5_norm)
+df_all$ghq12_sum <- as.numeric(df_all$ghq12_sum)
 df_all$gad <- as.numeric(df_all$gad)
 df_all$age <- as.numeric(df_all$age)
 df_all$gender_binary <- as.factor(df_all$gender_binary)
@@ -85,6 +87,7 @@ who_reg <- lm(
 
 ## Ergebnis
 
+summary(who_reg)
 model_parameters(who_reg, include_info = TRUE)
 standardize_parameters(who_reg)
 
@@ -218,7 +221,7 @@ mhlq_reg <- lm(
     climate1_mean +
     climate2_mean +
     climate3_mean +
-    field_reduced  +
+    field_reduced +
     brs_score +
     fsozuk6,
   data = df_all

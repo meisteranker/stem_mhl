@@ -6,8 +6,6 @@ library(sjPlot)
 library(ggeffects)
 library(gtsummary)
 library(psych)
-library(rempsyc)
-
 
 ### NA
 

@@ -7,12 +7,12 @@ library(easystats)
 
 df_all <- data_read("data_all_tidy.csv")
 
-### -9 in NA
+### -9 und -99 in NA
 
-df_all <- df_all |>
+df_all <- df_all %>%
   mutate(across(
     everything(),
-    ~ ifelse(.x == -9 | .x == "-9", NA, .x)
+    ~ replace(.x, .x %in% c(-1, -9, -99), NA)
   ))
 
 #### Build new variables
@@ -504,59 +504,39 @@ df_all <- df_all %>%
 
 ## Items umkodieren
 
+who5_items <- c(
+  "who5_positive_mood",
+  "who5_relaxed",
+  "who5_energetic",
+  "who5_restful_sleep",
+  "who5_interest_life"
+)
+
 df_all <- df_all %>%
   mutate(across(
-    c(
-      who5_positive_mood,
-      who5_relaxed,
-      who5_energetic,
-      who5_restful_sleep,
-      who5_interest_life
-    ),
+    all_of(who5_items),
+    ~ as.numeric(.x)
+  )) %>%
+  mutate(across(
+    all_of(who5_items),
+    ~ if_else(.x %in% c(-9, -99), NA_real_, .x)
+  )) %>%
+  mutate(across(
+    all_of(who5_items),
     ~ 6 - .x
-  ))
-
-## Summenscore berechnen
-
-df_all <- df_all %>%
+  )) %>%
   mutate(
-    who5_raw = rowSums(
-      select(
-        .,
-        who5_positive_mood,
-        who5_relaxed,
-        who5_energetic,
-        who5_restful_sleep,
-        who5_interest_life
-      ),
-      na.rm = TRUE
-    ),
+    who5_n_valid = rowSums(!is.na(select(., all_of(who5_items)))),
     who5_raw = if_else(
-      rowSums(
-        !is.na(select(
-          .,
-          who5_positive_mood,
-          who5_relaxed,
-          who5_energetic,
-          who5_restful_sleep,
-          who5_interest_life
-        ))
-      ) ==
-        0,
-      NA_real_,
-      who5_raw
-    )
+      who5_n_valid == 5,
+      rowSums(select(., all_of(who5_items)), na.rm = TRUE),
+      NA_real_
+    ),
+    who5_norm = who5_raw * 4
   )
-
-## Normwerte berechnen
-
-df_all <- df_all %>%
-  mutate(who5_norm = who5_raw * 4)
 
 ### GHQ-12
 # Codebook: 1-4 Skala, Likert-Scoring: (Wert - 1) ergibt 0-3, Summe 0-36
-
-## Items umkodieren
 
 ghq_items <- c(
   "ghq12_sleep_worries",
@@ -573,27 +553,36 @@ ghq_items <- c(
   "ghq12_worthless"
 )
 
+ghq_positive <- c(
+  "ghq12_concentration",
+  "ghq12_useful",
+  "ghq12_deal_problems",
+  "ghq12_contentment",
+  "ghq12_daily_duties"
+)
+
 df_all <- df_all %>%
+  mutate(across(
+    all_of(ghq_items),
+    ~ if_else(.x %in% c(-1, -9, -99), NA_real_, as.numeric(.x))
+  )) %>%
   mutate(across(
     all_of(ghq_items),
     ~ .x - 1
   ))
 
+
 ## Summenwert berechnen (Likert)
 
 df_all <- df_all %>%
   mutate(
-    ghq12_sum = rowSums(
-      select(., all_of(ghq_items)),
-      na.rm = TRUE
-    ),
+    ghq12_n_valid = rowSums(!is.na(select(., all_of(ghq_items)))),
     ghq12_sum = if_else(
-      rowSums(!is.na(select(., all_of(ghq_items)))) == 0,
-      NA_real_,
-      ghq12_sum
+      ghq12_n_valid >= 10,
+      rowMeans(select(., all_of(ghq_items)), na.rm = TRUE) * 12,
+      NA_real_
     )
   )
-
 
 ### PHQ-4
 # Codebook: 1 = "überhaupt nicht" ... 4 = "beinahe jeden Tag"
@@ -653,32 +642,28 @@ gad_items_extra <- c(
   "gad7_fear_bad_happen"
 )
 
-df_all <- df_all |>
-  mutate(across(
-    all_of(gad_items_extra),
-    ~ as.numeric(.) - 1
-  ))
-
-# Alle 7 GAD-7 Items für den Summenscore (Range: 0-21)
 gad_items_all <- c(
-  "phq4_nervous_scored", # GAD-7 Item 1 (aus PHQ-4)
-  "phq4_worry_control_scored", # GAD-7 Item 2 (aus PHQ-4)
-  "gad7_excess_worry", # GAD-7 Item 3
-  "gad7_relax_difficulty", # GAD-7 Item 4
-  "gad7_restlessness", # GAD-7 Item 5
-  "gad7_irritability", # GAD-7 Item 6
-  "gad7_fear_bad_happen" # GAD-7 Item 7
+  "phq4_nervous_scored",
+  "phq4_worry_control_scored",
+  gad_items_extra
 )
 
-df_all <- df_all |>
-  rowwise() |>
+df_all <- df_all %>%
+  mutate(across(
+    all_of(gad_items_extra),
+    ~ if_else(.x %in% c(-9, -99), NA_real_, as.numeric(.x))
+  ))
+# Keine -1-Transformation: Diese Items müssen 0 bis 3 bleiben.
+
+df_all <- df_all %>%
   mutate(
-    gad = {
-      vals <- c_across(all_of(gad_items_all))
-      if (all(is.na(vals))) NA_real_ else sum(vals, na.rm = TRUE)
-    }
-  ) |>
-  ungroup()
+    gad_n_valid = rowSums(!is.na(pick(all_of(gad_items_all)))),
+    gad = if_else(
+      gad_n_valid == 7,
+      rowSums(pick(all_of(gad_items_all)), na.rm = TRUE),
+      NA_real_
+    )
+  )
 
 ### F-SOZUK6
 
